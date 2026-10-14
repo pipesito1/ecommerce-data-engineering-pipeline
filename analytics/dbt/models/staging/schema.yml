@@ -1,0 +1,47 @@
+version: 2
+
+models:
+
+  - name: stg_users
+    description: "Staging model for user data."
+    columns:
+      - name: user_id
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_products
+    description: "Staging model for product data."
+    columns:
+      - name: product_id
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_orders
+    description: "Staging model for order data."
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_events
+    description: "Staging model for ecommerce events."
+    columns:
+      - name: event_id
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_reviews
+    description: "Staging model for product reviews."
+    columns:
+      - name: review_id
+        tests:
+          - not_null
+          - unique
+
+      - name: rating
+        tests:
+          - not_null

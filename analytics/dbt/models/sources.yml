@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: silver
+    description: "Cleaned and validated ecommerce data from the Silver layer."
+
+    schema: silver
+
+    tables:
+      - name: users
+      - name: products
+      - name: orders
+      - name: events
+      - name: reviews

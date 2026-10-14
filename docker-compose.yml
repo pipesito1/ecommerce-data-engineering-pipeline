@@ -1,0 +1,182 @@
+services:
+
+  # ============================================================
+  # POSTGRESQL
+  # ============================================================
+  postgres:
+    image: postgres:16
+    container_name: ecommerce_postgres
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+    ports:
+      - "${POSTGRES_PORT}:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/scripts
+
+
+  # ============================================================
+  # MINIO - S3 OBJECT STORAGE
+  # ============================================================
+  minio:
+    image: minio/minio:latest
+    container_name: ecommerce_minio
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+
+    ports:
+      - "${MINIO_API_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
+
+    volumes:
+      - minio_data:/data
+
+    command:
+      - server
+      - /data
+      - --console-address
+      - ":9001"
+
+
+  # ============================================================
+  # APACHE SPARK
+  # ============================================================
+  spark:
+    build:
+      context: .
+      dockerfile: Dockerfile.spark
+
+    image: ecommerce-spark:4.2.0
+    container_name: ecommerce_spark
+    restart: unless-stopped
+
+    depends_on:
+      - postgres
+      - minio
+
+    env_file:
+      - .env
+
+    environment:
+      # --------------------------------------------------------
+      # AWS / MinIO credentials
+      # --------------------------------------------------------
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+
+      # --------------------------------------------------------
+      # Java / Spark
+      # --------------------------------------------------------
+      JAVA_HOME: /opt/java/openjdk
+      SPARK_HOME: /opt/spark
+
+    volumes:
+      # Application code
+      - ./src:/opt/spark-apps/src
+
+      # Local project data
+      - ./data:/opt/spark-apps/data
+
+      # Utility scripts
+      - ./scripts:/opt/spark-apps/scripts
+
+    ports:
+      # Spark UI
+      - "4040:4040"
+
+      # Spark master / general UI
+      - "8080:8080"
+
+    command:
+      - /bin/bash
+      - -c
+      - |
+        sleep infinity
+
+  # --------------------------------------------------------
+  # dbt - DATA BUILD TOOL
+  # --------------------------------------------------------
+  dbt:
+    build:
+      context: .
+      dockerfile: Dockerfile.dbt
+    image: ecommerce-dbt:1.0
+    container_name: ecommerce_dbt
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      DBT_PROFILES_DIR: /usr/app/dbt
+    volumes:
+      - ./analytics/dbt:/usr/app/dbt
+    working_dir: /usr/app/dbt
+    command:
+      - /bin/bash
+      - -c
+      - |
+        sleep infinity
+
+  # --------------------------------------------------------
+  # airflow - APACHE AIRFLOW
+  # --------------------------------------------------------
+  
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    image: ecommerce-airflow:1.0
+    container_name: ecommerce_airflow
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__API__AUTH_BACKENDS: airflow.api.auth.backend.basic_auth
+
+    volumes:
+      - ./orchestration/airflow/dags:/opt/airflow/dags
+      - ./orchestration/airflow/logs:/opt/airflow/logs
+      - ./orchestration/airflow/plugins:/opt/airflow/plugins
+      - ./orchestration/airflow/monitoring:/opt/airflow/monitoring
+      - ./src:/opt/airflow/src
+      - ./analytics/dbt:/opt/airflow/dbt
+
+      # Access to Docker Engine
+      - /var/run/docker.sock:/var/run/docker.sock
+
+    ports:
+      - "8081:8080"
+
+    command: standalone
+
+# ==============================================================
+# PERSISTENT VOLUMES
+# ==============================================================
+volumes:
+
+  postgres_data:
+    name: ecommerce_postgres_data
+
+  minio_data:
+    name: ecommerce_minio_data
