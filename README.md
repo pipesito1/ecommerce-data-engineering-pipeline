@@ -150,4 +150,4 @@ The core pipeline, analytical transformations, data quality checks, monitoring t
 ## Author
 
 JESUS FELIPE SEPULVEDA ALVAREZ
-Data Engineering Portfolio Project
+Data Engineering / Portfolio Project
