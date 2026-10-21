@@ -1,6 +1,11 @@
-﻿# E-Commerce Data Engineering Pipeline
+<div align="center">
+ # E-Commerce Data Engineering Pipeline
+
+<img src="ecommerce-data-engineering-pipeline.jfif">
 
 An end-to-end data engineering project that demonstrates how to ingest, transform, validate, and monitor e-commerce data using a modern data platform.
+
+</div>
 
 ## Project Overview
 
