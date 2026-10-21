@@ -143,6 +143,10 @@ Use the configured local Airflow credentials.
 
 The core pipeline, analytical transformations, data quality checks, monitoring tables, and dashboards have been implemented. The repository is being prepared for public release, including documentation and a final review of configuration and generated files.
 
+## dashboard
+<img src="power1.jpeg">
+<img src="power2.jpeg">
+
 ## Author
 
 JESUS FELIPE SEPULVEDA ALVAREZ
